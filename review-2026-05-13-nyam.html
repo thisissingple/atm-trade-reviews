@@ -5,59 +5,121 @@
 <title>ATM 對盤 — 2026-05-13 NY AM</title>
 <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
+  /* Palette aligned with teach.html (TPT teach mode) */
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --panel-2: #1f242c;
+    --border: #2a3038;
+    --text: #d7dde6;
+    --text-dim: #8c95a3;
+    --accent: #4a90e2;
+    --green: #26a69a;
+    --red: #ef5350;
+    --yellow: #f0ad4e;
+    --tier-monitor: #6a737d;
+    --tier-analyze: #f0ad4e;
+    --tier-enter: #26a69a;
+    --kz-ny-am: #3b82f6;
+  }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Microsoft JhengHei", sans-serif; background: #0d1117; color: #e6edf3; }
-  #header { padding: 12px 20px; background: #161b22; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
-  #header h1 { margin: 0; font-size: 18px; font-weight: 600; }
-  #header .sub { font-size: 12px; color: #8b949e; margin-top: 2px; }
-  #header .actions { display: flex; gap: 10px; }
-  button { background: #238636; border: 0; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500; }
-  button:hover { background: #2ea043; }
-  button.secondary { background: #30363d; }
-  button.secondary:hover { background: #484f58; }
-  #main { display: flex; height: calc(100vh - 60px); }
-  #chart-wrap { flex: 1; position: relative; background: #0d1117; }
+  body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    font-size: 13px;
+  }
+  #header {
+    padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #header h1 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); }
+  #header .sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  #header .actions { display: flex; gap: 8px; }
+  button {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 5px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; font-weight: 500;
+    font-family: inherit;
+  }
+  button:hover { background: var(--border); }
+  button.primary { background: var(--green); border-color: var(--green); color: #fff; }
+  button.primary:hover { background: #1f8a7f; border-color: #1f8a7f; }
+  #main { display: grid; grid-template-columns: 1fr 420px; height: calc(100vh - 53px); overflow: hidden; }
+  #chart-wrap { background: var(--panel); position: relative; overflow: hidden; border-right: 1px solid var(--border); }
   #chart { width: 100%; height: 100%; }
-  #legend { position: absolute; top: 10px; left: 10px; background: rgba(13,17,23,0.92); padding: 8px 12px; border-radius: 6px; font-size: 11px; border: 1px solid #30363d; max-width: 280px; z-index: 5; }
-  #legend .lv { display: flex; justify-content: space-between; padding: 1px 0; }
-  #legend .swept { color: #f85149; text-decoration: line-through; opacity: 0.7; }
-  #legend .untaken { color: #3fb950; font-weight: 600; }
-  #sidebar { width: 440px; background: #0d1117; border-left: 1px solid #30363d; overflow-y: auto; padding: 12px; }
-  .event { border: 1px solid #30363d; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #161b22; cursor: pointer; transition: all 0.15s; }
-  .event:hover { border-color: #58a6ff; }
-  .event.active { border-color: #f0b32a; background: #1c2128; box-shadow: 0 0 0 1px #f0b32a; }
-  .event .time { font-weight: 600; font-size: 13px; color: #58a6ff; }
-  .event .stage { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #8b949e; padding: 2px 6px; background: #30363d; border-radius: 10px; margin-left: 6px; }
-  .event .stage.rejected { background: #f85149; color: #fff; }
-  .event .stage.candidate { background: #f0b32a; color: #000; }
-  .event .stage.info { background: #6e7681; }
-  .event .stage.summary { background: #1f6feb; }
-  .event .stage.session_open, .event .stage.session_close { background: #8957e5; }
-  .event .title { font-size: 14px; font-weight: 600; margin: 6px 0; color: #e6edf3; }
-  .event .sop { font-size: 11px; color: #8b949e; font-style: italic; margin-bottom: 6px; }
-  .event .narrative { font-size: 12px; line-height: 1.55; color: #c9d1d9; white-space: pre-wrap; }
-  .event .decision { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-top: 8px; background: #30363d; }
-  .event .decision.wait { background: #8b949e; color: #0d1117; }
-  .event .question { background: #1c2128; border-left: 3px solid #f0b32a; padding: 8px 10px; margin-top: 8px; font-size: 11px; color: #f0b32a; }
+  #legend {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(14,17,22,0.92); padding: 8px 12px; border-radius: 4px;
+    font-size: 11px; border: 1px solid var(--border); max-width: 280px; z-index: 5;
+  }
+  #legend .head { font-weight: 600; margin-bottom: 6px; color: var(--accent); }
+  #legend .lv { display: flex; justify-content: space-between; gap: 12px; padding: 1px 0; }
+  #legend .swept { color: var(--red); text-decoration: line-through; opacity: 0.65; }
+  #legend .untaken { color: var(--green); font-weight: 600; }
+  #sidebar { background: var(--bg); overflow-y: auto; padding: 10px; }
+  .event {
+    border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+    margin-bottom: 8px; background: var(--panel); cursor: pointer; transition: all 0.15s;
+  }
+  .event:hover { border-color: var(--accent); }
+  .event.active { border-color: var(--yellow); background: var(--panel-2); box-shadow: 0 0 0 1px var(--yellow); }
+  .event .time { font-weight: 600; font-size: 12px; color: var(--accent); }
+  .event .stage {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; color: #fff;
+    padding: 2px 6px; background: var(--tier-monitor); border-radius: 10px; margin-left: 6px;
+  }
+  .event .stage.rejected_setup { background: var(--red); }
+  .event .stage.stage_1_candidate { background: var(--tier-analyze); color: #000; }
+  .event .stage.info { background: var(--tier-monitor); }
+  .event .stage.summary { background: var(--accent); }
+  .event .stage.session_open, .event .stage.session_close { background: var(--tier-enter); }
+  .event .title { font-size: 13px; font-weight: 600; margin: 6px 0 4px; color: var(--text); line-height: 1.35; }
+  .event .sop { font-size: 10.5px; color: var(--text-dim); font-style: italic; margin-bottom: 6px; }
+  .event .narrative { font-size: 11.5px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+  .event .decision {
+    display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 10.5px;
+    font-weight: 600; margin-top: 8px; background: var(--border); color: var(--text);
+  }
+  .event .decision.wait { background: var(--tier-monitor); color: #fff; }
+  .event .question {
+    background: rgba(240, 173, 78, 0.10); border-left: 3px solid var(--yellow);
+    padding: 8px 10px; margin-top: 8px; font-size: 11px; color: var(--yellow); border-radius: 3px;
+  }
   .comment-section { margin-top: 10px; }
-  .comment-input { width: 100%; min-height: 60px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 6px 8px; color: #e6edf3; font-family: inherit; font-size: 12px; resize: vertical; }
-  .comment-input:focus { outline: none; border-color: #58a6ff; }
-  .comment-saved { font-size: 10px; color: #3fb950; margin-top: 4px; }
+  .comment-input {
+    width: 100%; min-height: 56px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 6px 8px; color: var(--text);
+    font-family: inherit; font-size: 11.5px; resize: vertical;
+  }
+  .comment-input:focus { outline: none; border-color: var(--accent); }
+  .comment-saved { font-size: 10px; color: var(--green); margin-top: 4px; }
   /* Tour overlay */
-  #tour-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100; display: flex; justify-content: center; align-items: center; }
-  #tour-box { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px 28px; max-width: 560px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-  #tour-box h2 { margin: 0 0 12px; color: #58a6ff; }
-  #tour-box .step-counter { font-size: 11px; color: #8b949e; margin-bottom: 6px; letter-spacing: 1px; }
-  #tour-box .content { font-size: 14px; line-height: 1.6; color: #c9d1d9; min-height: 100px; }
-  #tour-box .nav { margin-top: 18px; display: flex; justify-content: space-between; align-items: center; }
-  #tour-box code { background: #0d1117; padding: 2px 6px; border-radius: 3px; color: #f0b32a; font-size: 12px; }
+  #tour-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.78); z-index: 100;
+    display: flex; justify-content: center; align-items: center;
+  }
+  #tour-box {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 22px 26px; max-width: 560px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  #tour-box h2 { margin: 0 0 10px; color: var(--accent); font-size: 17px; }
+  #tour-box .step-counter { font-size: 10px; color: var(--text-dim); margin-bottom: 6px; letter-spacing: 1px; }
+  #tour-box .content { font-size: 13px; line-height: 1.65; color: var(--text); min-height: 100px; }
+  #tour-box .nav { margin-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  #tour-box code { background: var(--bg); padding: 2px 6px; border-radius: 3px; color: var(--yellow); font-size: 11.5px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   #tour-overlay.hidden { display: none; }
   /* Finish dialog */
-  #finish-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200; display: none; justify-content: center; align-items: center; }
+  #finish-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200;
+    display: none; justify-content: center; align-items: center;
+  }
   #finish-overlay.show { display: flex; }
-  #finish-box { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 24px 28px; max-width: 640px; width: 90%; }
-  #finish-box h2 { color: #3fb950; margin-top: 0; }
-  #finish-box pre { background: #0d1117; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; color: #f0b32a; }
+  #finish-box {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 22px 26px; max-width: 640px; width: 90%;
+  }
+  #finish-box h2 { color: var(--green); margin-top: 0; font-size: 16px; }
+  #finish-box p { font-size: 13px; line-height: 1.5; }
+  #finish-box pre { background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 4px; overflow-x: auto; font-size: 11.5px; color: var(--yellow); font-family: ui-monospace, "SF Mono", Menlo, monospace; }
 </style>
 </head>
 <body>
@@ -67,8 +129,8 @@
     <div class="sub">MNQM2026 + ESM2026 (SMT pair) · KZ 09:30 – 11:00 NY EDT (TW 21:30 – 23:00) · 0 trade outcome</div>
   </div>
   <div class="actions">
-    <button onclick="showTour()" class="secondary">📖 教學</button>
-    <button onclick="onFinish()">✅ 完成評論</button>
+    <button onclick="showTour()">📖 教學</button>
+    <button onclick="onFinish()" class="primary">✅ 完成評論</button>
   </div>
 </div>
 <div id="main">
@@ -86,10 +148,10 @@
     <h2 id="tour-title"></h2>
     <div class="content" id="tour-content"></div>
     <div class="nav">
-      <button class="secondary" onclick="skipTour()">略過</button>
-      <div>
-        <button class="secondary" onclick="tourPrev()" id="tour-prev">上一步</button>
-        <button onclick="tourNext()" id="tour-next">下一步</button>
+      <button onclick="skipTour()">略過</button>
+      <div style="display:flex; gap:8px;">
+        <button onclick="tourPrev()" id="tour-prev">上一步</button>
+        <button onclick="tourNext()" id="tour-next" class="primary">下一步 →</button>
       </div>
     </div>
   </div>
@@ -102,8 +164,8 @@
     <p>共 <strong id="finish-count">0</strong> 條評論已存到瀏覽器(localStorage)。要把 feedback 交給你自己的 Claude Code,跟它說:</p>
     <pre id="finish-cmd"></pre>
     <p style="font-size:13px;color:#8b949e">⬇️ 或者 <strong>下載 JSON 檔</strong>後拖到 Claude Code chat:</p>
-    <button onclick="downloadJSON()">下載 review-feedback.json</button>
-    <button class="secondary" onclick="hideFinish()" style="margin-left:10px">關閉</button>
+    <button onclick="downloadJSON()" class="primary">下載 review-feedback.json</button>
+    <button onclick="hideFinish()" style="margin-left:10px">關閉</button>
   </div>
 </div>
 
@@ -405,31 +467,31 @@ const ANALYSIS = {
   ]
 };
 
-// ==================== Chart setup ====================
+// ==================== Chart setup (palette aligned with teach.html) ====================
 const chartEl = document.getElementById('chart');
 const chart = LightweightCharts.createChart(chartEl, {
-  layout: { background: { color: '#0d1117' }, textColor: '#c9d1d9' },
-  grid: { vertLines: { color: '#161b22' }, horzLines: { color: '#161b22' } },
+  layout: { background: { color: '#0e1116' }, textColor: '#d7dde6' },
+  grid: { vertLines: { color: '#1a1f27' }, horzLines: { color: '#1a1f27' } },
   crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-  rightPriceScale: { borderColor: '#30363d' },
-  timeScale: { borderColor: '#30363d', timeVisible: true, secondsVisible: false },
+  rightPriceScale: { borderColor: '#2a3038' },
+  timeScale: { borderColor: '#2a3038', timeVisible: true, secondsVisible: false },
   width: chartEl.clientWidth,
   height: chartEl.clientHeight,
 });
 const series = chart.addCandlestickSeries({
-  upColor: '#3fb950', downColor: '#f85149',
-  borderUpColor: '#3fb950', borderDownColor: '#f85149',
-  wickUpColor: '#3fb950', wickDownColor: '#f85149',
+  upColor: '#26a69a', downColor: '#ef5350',
+  borderUpColor: '#26a69a', borderDownColor: '#ef5350',
+  wickUpColor: '#26a69a', wickDownColor: '#ef5350',
 });
 series.setData(BARS.nq);
 
-// §2.4 pool levels as horizontal price lines
+// §2.4 pool levels as horizontal price lines (teach palette)
 const LEVELS = ANALYSIS.nq_levels;
 LEVELS.forEach(l => {
   const swept = !!l.swept_ts;
   series.createPriceLine({
     price: l.price,
-    color: swept ? '#f8514970' : '#3fb95080',
+    color: swept ? '#ef535070' : '#26a69a99',
     lineWidth: 1,
     lineStyle: swept ? LightweightCharts.LineStyle.Dashed : LightweightCharts.LineStyle.Solid,
     axisLabelVisible: true,
@@ -437,26 +499,48 @@ LEVELS.forEach(l => {
   });
 });
 
-// Legend
+// NY AM KZ shading (per teach.html SESSION_COLORS: NY AM = #3b82f6 alpha 0.10)
+const kzShade = chart.addHistogramSeries({
+  priceScaleId: '',
+  color: 'rgba(59, 130, 246, 0.10)',
+  base: 0,
+  priceLineVisible: false,
+  lastValueVisible: false,
+});
+const KZ_START = ANALYSIS.session.kz_start_unix;
+const KZ_END = ANALYSIS.session.kz_end_unix;
+const kzPoints = BARS.nq
+  .filter(b => b.time >= KZ_START && b.time < KZ_END)
+  .map(b => ({ time: b.time, value: Math.max(b.high, b.open, b.close) * 1.5 }));
+kzShade.setData(kzPoints);
+
+// Legend (DOM-built, avoids innerHTML injection)
 const lg = document.getElementById('legend');
-lg.innerHTML = '<div style="font-weight:600;margin-bottom:6px;color:#58a6ff">§2.4 流動性 pool (NQ)</div>' +
-  LEVELS.sort((a,b) => b.price - a.price).map(l => {
-    const cls = l.swept_ts ? 'swept' : 'untaken';
-    const tag = l.swept_ts ? '✗ ' + l.swept_ny_hm : '✓ 未取';
-    return `<div class="lv ${cls}"><span>${l.level}</span><span>${l.price}</span><span>${tag}</span></div>`;
-  }).join('');
+const lgHead = document.createElement('div');
+lgHead.className = 'head';
+lgHead.textContent = '§2.4 流動性 pool (NQ)';
+lg.appendChild(lgHead);
+LEVELS.slice().sort((a,b) => b.price - a.price).forEach(l => {
+  const row = document.createElement('div');
+  row.className = 'lv ' + (l.swept_ts ? 'swept' : 'untaken');
+  const s1 = document.createElement('span'); s1.textContent = l.level;
+  const s2 = document.createElement('span'); s2.textContent = l.price;
+  const s3 = document.createElement('span'); s3.textContent = l.swept_ts ? '✗ ' + l.swept_ny_hm : '✓ 未取';
+  row.append(s1, s2, s3);
+  lg.appendChild(row);
+});
 
 // Resize handler
 window.addEventListener('resize', () => {
   chart.applyOptions({ width: chartEl.clientWidth, height: chartEl.clientHeight });
 });
 
-// Mark events as markers on chart
+// Mark events as markers on chart — teach palette
 const markers = ANALYSIS.events.map(e => {
   const colors = {
-    'session_open': '#8957e5', 'session_close': '#8957e5',
-    'stage_1_candidate': '#f0b32a', 'rejected_setup': '#f85149',
-    'info': '#58a6ff', 'summary': '#1f6feb'
+    'session_open': '#26a69a', 'session_close': '#26a69a',
+    'stage_1_candidate': '#f0ad4e', 'rejected_setup': '#ef5350',
+    'info': '#4a90e2', 'summary': '#4a90e2'
   };
   return {
     time: e.bar_unix,
